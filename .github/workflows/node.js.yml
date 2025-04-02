@@ -28,14 +28,14 @@ jobs:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
     - run: npm ci
-    - run: npm run build --if-present
-    # 👇 Store the dist folder
+    - run: |
+            npm run build --if-present
+            ls -als
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: app-build
-        path: dist
-
+        name: "${{ matrix.os }}@${{ matrix.node-version }}@${{ github.run_id }}"
+        path: ./
 
   test:
     runs-on: ubuntu-latest
@@ -47,16 +47,14 @@ jobs:
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
     needs: [build]
     steps:
-    # 👇 Get the dist folder
-    - name: Download build artifacts
-      uses: actions/download-artifact@v4
-      with:
-        name: app-build
     - uses: actions/checkout@v4
     - name: Use Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@v4
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
-    - run: npm ci
+    - name: Download all workflow run artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: "${{ matrix.os }}@${{ matrix.node-version }}@${{ github.run_id }}"
     - run: npm test -- -u
